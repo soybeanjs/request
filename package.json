@@ -1,48 +1,69 @@
 {
   "name": "@soybeanjs/request",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "lint": "eslint . --fix",
-    "commit": "soy git-commit",
-    "cleanup": "soy cleanup",
-    "update-pkg": "soy update-pkg",
-    "update-version": "bumpp package.json",
-    "publish-pkg": "pnpm -r publish --access public",
-    "release": "pnpm update-version && pnpm publish-pkg"
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.28.1",
+  "description": "A request library based on Axios",
+  "author": {
+    "name": "Soybean",
+    "email": "soybeanjs@outlook.com",
+    "url": "https://github.com/soybeanjs"
   },
-  "peerDependencies": {
-    "axios": "^1.1.3",
-    "form-data": "^4.0.0",
-    "qs": "^6.11.0"
+  "license": "MIT",
+  "homepage": "https://github.com/soybeanjs/request",
+  "repository": {
+    "url": "https://github.com/soybeanjs/request.git"
+  },
+  "bugs": {
+    "url": "https://github.com/soybeanjs/request/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "cleanup": "soy cleanup",
+    "commit": "soy git-commit",
+    "dev": "tsup --watch",
+    "lint": "eslint . --fix",
+    "prepare": "simple-git-hooks",
+    "publish-pkg": "pnpm publish --access public",
+    "release": "soy release",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "update-pkg": "soy ncu"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "axios-retry": "^4.5.0",
+    "qs-esm": "^7.0.3"
   },
   "devDependencies": {
-    "@soybeanjs/cli": "^0.1.5",
-    "@types/qs": "^6.9.7",
-    "axios": "^1.2.2",
-    "bumpp": "^8.2.1",
-    "eslint": "^8.31.0",
-    "eslint-config-soybeanjs": "^0.2.1",
-    "form-data": "^4.0.0",
-    "lint-staged": "^13.1.0",
-    "qs": "^6.11.0",
-    "simple-git-hooks": "^2.8.1",
-    "tsup": "^6.5.0",
-    "tsx": "^3.12.2",
-    "typescript": "^4.9.4"
+    "@soybeanjs/cli": "1.4.4",
+    "@soybeanjs/eslint-config": "1.7.5",
+    "@types/node": "25.0.10",
+    "eslint": "9.39.2",
+    "lint-staged": "16.2.7",
+    "simple-git-hooks": "2.13.1",
+    "tsdown": "0.20.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
   },
   "simple-git-hooks": {
-    "commit-msg": "pnpm soybean git-commit-verify",
-    "pre-commit": "pnpm exec lint-staged --concurrent false"
+    "commit-msg": "pnpm soy git-commit-verify",
+    "pre-commit": "pnpm typecheck && pnpm lint-staged"
   },
   "lint-staged": {
-    "*": [
-      "eslint . --fix"
-    ]
+    "*": "eslint --fix"
   }
 }
