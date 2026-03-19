@@ -1,25 +1,27 @@
 {
   "name": "@soybeanjs/request",
-  "type": "module",
   "version": "0.0.2",
-  "packageManager": "pnpm@10.28.2",
   "description": "A request library based on Axios",
+  "homepage": "https://github.com/soybeanjs/request",
+  "bugs": {
+    "url": "https://github.com/soybeanjs/request/issues"
+  },
+  "license": "MIT",
   "author": {
     "name": "Soybean",
     "email": "soybeanjs@outlook.com",
     "url": "https://github.com/soybeanjs"
   },
-  "license": "MIT",
-  "homepage": "https://github.com/soybeanjs/request",
   "repository": {
     "url": "https://github.com/soybeanjs/request.git"
   },
-  "bugs": {
-    "url": "https://github.com/soybeanjs/request/issues"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -27,21 +29,22 @@
       "require": "./dist/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "cleanup": "soy cleanup",
     "commit": "soy git-commit",
-    "dev": "tsup --watch",
-    "lint": "eslint . --fix",
+    "commit:zh": "soy git-commit -l=zh-cn",
+    "lint": "oxlint --fix",
+    "fmt": "oxfmt",
     "prepare": "simple-git-hooks",
-    "publish-pkg": "pnpm publish --access public",
+    "publish-pkg": "pnpm -r publish --access public",
     "release": "soy release",
+    "stub": "pnpm -r run stub",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "update-pkg": "soy ncu"
+    "upkg": "soy ncu"
   },
   "dependencies": {
     "axios": "^1.13.4",
@@ -50,10 +53,10 @@
   },
   "devDependencies": {
     "@soybeanjs/cli": "1.4.4",
-    "@soybeanjs/eslint-config": "1.7.5",
     "@types/node": "25.2.0",
-    "eslint": "9.39.2",
     "lint-staged": "16.2.7",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
     "simple-git-hooks": "2.13.1",
     "tsdown": "0.20.1",
     "tsx": "4.21.0",
@@ -64,6 +67,7 @@
     "pre-commit": "pnpm typecheck && pnpm lint-staged"
   },
   "lint-staged": {
-    "*": "eslint --fix"
-  }
+    "*": "oxlint --fix && oxfmt"
+  },
+  "packageManager": "pnpm@10.28.2"
 }

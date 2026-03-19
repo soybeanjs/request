@@ -54,13 +54,13 @@ const request = createRequest(
       return response.data.result;
     },
     // Request interceptor
-    onRequest: async (config) => {
+    onRequest: async config => {
       // Add token
       config.headers.Authorization = `Bearer ${getToken()}`;
       return config;
     },
     // Check if backend request is successful
-    isBackendSuccess: (response) => {
+    isBackendSuccess: response => {
       return response.data.code === 200;
     },
     // Handle backend failure
@@ -73,7 +73,7 @@ const request = createRequest(
       }
     },
     // Error handling
-    onError: async (error) => {
+    onError: async error => {
       console.error('Request failed:', error.message);
     }
   }
@@ -111,16 +111,16 @@ if (error) {
 
 ### RequestOption Configuration
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `transform` | `Function` | Yes | Transform response data to business data |
-| `onRequest` | `Function` | No | Request interceptor, can add token, etc. |
-| `isBackendSuccess` | `Function` | Yes | Check if backend business logic is successful |
-| `onBackendFail` | `Function` | No | Backend failure callback, handle token expiration, etc. |
-| `onError` | `Function` | No | Request error handling, show error message, etc. |
-| `defaultState` | `Object` | No | Default state object |
-| `backendErrorFlag` | `string` | No | Backend error flag, default `'BACKEND_ERROR'` |
-| `backendErrorMsg` | `string` | No | Backend error message |
+| Option             | Type       | Required | Description                                             |
+| ------------------ | ---------- | -------- | ------------------------------------------------------- |
+| `transform`        | `Function` | Yes      | Transform response data to business data                |
+| `onRequest`        | `Function` | No       | Request interceptor, can add token, etc.                |
+| `isBackendSuccess` | `Function` | Yes      | Check if backend business logic is successful           |
+| `onBackendFail`    | `Function` | No       | Backend failure callback, handle token expiration, etc. |
+| `onError`          | `Function` | No       | Request error handling, show error message, etc.        |
+| `defaultState`     | `Object`   | No       | Default state object                                    |
+| `backendErrorFlag` | `string`   | No       | Backend error flag, default `'BACKEND_ERROR'`           |
+| `backendErrorMsg`  | `string`   | No       | Backend error message                                   |
 
 ### Request Processing Flow
 
@@ -168,7 +168,7 @@ const fileData = await request({
 const fileData = await request({
   url: '/download/file',
   responseType: 'blob',
-  getFileName: (response) => {
+  getFileName: response => {
     // Custom parsing logic
     return 'custom-filename.pdf';
   }
@@ -192,6 +192,7 @@ import { downloadFile } from '@soybeanjs/request';
 ```
 
 Supported file types:
+
 - `blob` → `FileResponseData<Blob>`
 - `arraybuffer` → `FileResponseData<ArrayBuffer>`
 - `stream` → `FileResponseData<ReadableStream<Uint8Array>>`
@@ -244,26 +245,23 @@ interface CustomState {
   userId: number;
 }
 
-const request = createRequest(
-  axiosConfig,
-  {
-    defaultState: {
-      token: '',
-      userId: 0
-    } as CustomState,
-    // ...other config
-  }
-);
+const request = createRequest(axiosConfig, {
+  defaultState: {
+    token: '',
+    userId: 0
+  } as CustomState
+  // ...other config
+});
 
 // Access and modify state
 request.state.token = 'new-token';
 request.state.userId = 123;
 
 // Use state in hooks
-onRequest: (config) => {
+onRequest: config => {
   config.headers.Authorization = `Bearer ${request.state.token}`;
   return config;
-}
+};
 ```
 
 ### 4. Auto Retry
@@ -274,8 +272,8 @@ const request = createRequest(
     baseURL: 'https://api.example.com',
     // axios-retry config
     retries: 3,
-    retryDelay: (retryCount) => retryCount * 1000,
-    retryCondition: (error) => {
+    retryDelay: retryCount => retryCount * 1000,
+    retryCondition: error => {
       // Only retry on network error or 5xx error
       return !error.response || error.response.status >= 500;
     }
@@ -302,12 +300,9 @@ interface ApiResponse<T = any> {
 
 // ResponseData: backend raw response type
 // ApiData: business data type
-const request = createRequest(
-  axiosConfig,
-  {
-    transform: (response: AxiosResponse<ApiResponse>) => response.data.data,
-  }
-);
+const request = createRequest(axiosConfig, {
+  transform: (response: AxiosResponse<ApiResponse>) => response.data.data
+});
 
 // Type inference: data type is ApiResponse<User>
 const user = await request<User>({
@@ -324,13 +319,12 @@ Parse filename from `Content-Disposition` response header:
 ```typescript
 import { parseContentDisposition } from '@soybeanjs/request';
 
-const filename = parseContentDisposition(
-  'attachment; filename*=UTF-8\'\'%E6%96%87%E4%BB%B6.pdf'
-);
+const filename = parseContentDisposition("attachment; filename*=UTF-8''%E6%96%87%E4%BB%B6.pdf");
 // '文件.pdf'
 ```
 
 Supported formats:
+
 - RFC 5987 encoded: `filename*=UTF-8''example%20file.pdf`
 - Regular format: `filename="example.pdf"` or `filename=example.pdf`
 
@@ -365,7 +359,7 @@ const request = createRequest(
       return response.data.data;
     },
     // Request interceptor
-    onRequest: async (config) => {
+    onRequest: async config => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -373,7 +367,7 @@ const request = createRequest(
       return config;
     },
     // Check business success
-    isBackendSuccess: (response) => {
+    isBackendSuccess: response => {
       return response.data.code === 200;
     },
     // Business failure handling
@@ -389,10 +383,9 @@ const request = createRequest(
         response.config.headers.Authorization = `Bearer ${newToken}`;
         return instance.request(response.config);
       }
-
     },
     // Error handling
-    onError: async (error) => {
+    onError: async error => {
       showMessage(error.response?.data.message || error.message);
     }
   }
@@ -458,10 +451,7 @@ async function uploadFile(file: File) {
 ```typescript
 import { createFlatRequest } from '@soybeanjs/request';
 
-const flatRequest = createFlatRequest(
-  axiosConfig,
-  options
-);
+const flatRequest = createFlatRequest(axiosConfig, options);
 
 // All requests return { data, error, response }
 async function safeGetUser(id: number) {
@@ -488,7 +478,7 @@ Create standard request instance.
 function createRequest<ResponseData, ApiData, State>(
   axiosConfig?: CreateAxiosDefaults,
   options?: Partial<RequestOption<ResponseData, ApiData, State>>
-): RequestInstance<ApiData, State>
+): RequestInstance<ApiData, State>;
 ```
 
 ### createFlatRequest
@@ -499,7 +489,7 @@ Create flat request instance, no exception thrown.
 function createFlatRequest<ResponseData, ApiData, State>(
   axiosConfig?: CreateAxiosDefaults,
   options?: Partial<RequestOption<ResponseData, ApiData, State>>
-): FlatRequestInstance<ResponseData, ApiData, State>
+): FlatRequestInstance<ResponseData, ApiData, State>;
 ```
 
 ### Type Definitions
@@ -507,9 +497,7 @@ function createFlatRequest<ResponseData, ApiData, State>(
 ```typescript
 // Request instance
 interface RequestInstance<ApiData, State> {
-  <T = ApiData, R extends ResponseType = 'json'>(
-    config: CustomAxiosRequestConfig<R>
-  ): Promise<MappedType<R, T>>;
+  <T = ApiData, R extends ResponseType = 'json'>(config: CustomAxiosRequestConfig<R>): Promise<MappedType<R, T>>;
   state: State;
 }
 
@@ -573,7 +561,7 @@ The library automatically parses filename from `Content-Disposition` response he
 const fileData = await request({
   url: '/download',
   responseType: 'blob',
-  getFileName: (response) => {
+  getFileName: response => {
     // Custom parsing logic
     return 'my-file.pdf';
   }

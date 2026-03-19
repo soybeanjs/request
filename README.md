@@ -54,13 +54,13 @@ const request = createRequest(
       return response.data.result;
     },
     // 请求前拦截
-    onRequest: async (config) => {
+    onRequest: async config => {
       // 添加 token
       config.headers.Authorization = `Bearer ${getToken()}`;
       return config;
     },
     // 判断后端业务是否成功
-    isBackendSuccess: (response) => {
+    isBackendSuccess: response => {
       return response.data.code === 200;
     },
     // 后端业务失败处理
@@ -73,7 +73,7 @@ const request = createRequest(
       }
     },
     // 错误处理
-    onError: async (error) => {
+    onError: async error => {
       console.error('Request failed:', error.message);
     }
   }
@@ -111,16 +111,16 @@ if (error) {
 
 ### RequestOption 配置项
 
-| 配置项 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| `transform` | `Function` | 是 | 转换响应数据为业务数据 |
-| `onRequest` | `Function` | 否 | 请求前拦截器，可添加 token 等 |
-| `isBackendSuccess` | `Function` | 是 | 判断后端业务逻辑是否成功 |
-| `onBackendFail` | `Function` | 否 | 后端业务失败回调，如处理 token 过期 |
-| `onError` | `Function` | 否 | 请求错误处理，如显示错误提示 |
-| `defaultState` | `Object` | 否 | 默认状态对象 |
-| `backendErrorFlag` | `string` | 否 | 后端错误标识，默认 `'BACKEND_ERROR'` |
-| `backendErrorMsg` | `string` | 否 | 后端错误消息 |
+| 配置项             | 类型       | 必填 | 说明                                 |
+| ------------------ | ---------- | ---- | ------------------------------------ |
+| `transform`        | `Function` | 是   | 转换响应数据为业务数据               |
+| `onRequest`        | `Function` | 否   | 请求前拦截器，可添加 token 等        |
+| `isBackendSuccess` | `Function` | 是   | 判断后端业务逻辑是否成功             |
+| `onBackendFail`    | `Function` | 否   | 后端业务失败回调，如处理 token 过期  |
+| `onError`          | `Function` | 否   | 请求错误处理，如显示错误提示         |
+| `defaultState`     | `Object`   | 否   | 默认状态对象                         |
+| `backendErrorFlag` | `string`   | 否   | 后端错误标识，默认 `'BACKEND_ERROR'` |
+| `backendErrorMsg`  | `string`   | 否   | 后端错误消息                         |
 
 ### 请求处理流程
 
@@ -168,7 +168,7 @@ const fileData = await request({
 const fileData = await request({
   url: '/download/file',
   responseType: 'blob',
-  getFileName: (response) => {
+  getFileName: response => {
     // 自定义解析逻辑
     return 'custom-filename.pdf';
   }
@@ -192,6 +192,7 @@ import { downloadFile } from '@soybeanjs/request';
 ```
 
 支持的文件类型：
+
 - `blob` → `FileResponseData<Blob>`
 - `arraybuffer` → `FileResponseData<ArrayBuffer>`
 - `stream` → `FileResponseData<ReadableStream<Uint8Array>>`
@@ -244,26 +245,23 @@ interface CustomState {
   userId: number;
 }
 
-const request = createRequest(
-  axiosConfig,
-  {
-    defaultState: {
-      token: '',
-      userId: 0
-    } as CustomState,
-    // ...其他配置
-  }
-);
+const request = createRequest(axiosConfig, {
+  defaultState: {
+    token: '',
+    userId: 0
+  } as CustomState
+  // ...其他配置
+});
 
 // 访问和修改状态
 request.state.token = 'new-token';
 request.state.userId = 123;
 
 // 在钩子中使用状态
-onRequest: (config) => {
+onRequest: config => {
   config.headers.Authorization = `Bearer ${request.state.token}`;
   return config;
-}
+};
 ```
 
 ### 4. 自动重试
@@ -274,8 +272,8 @@ const request = createRequest(
     baseURL: 'https://api.example.com',
     // axios-retry 配置
     retries: 3,
-    retryDelay: (retryCount) => retryCount * 1000,
-    retryCondition: (error) => {
+    retryDelay: retryCount => retryCount * 1000,
+    retryCondition: error => {
       // 仅在网络错误或 5xx 错误时重试
       return !error.response || error.response.status >= 500;
     }
@@ -302,12 +300,9 @@ interface ApiResponse<T = any> {
 
 // ResponseData：后端原始响应类型
 // ApiData：业务数据类型
-const request = createRequest(
-  axiosConfig,
-  {
-    transform: (response: AxiosResponse<ApiResponse>) => response.data.data,
-  }
-);
+const request = createRequest(axiosConfig, {
+  transform: (response: AxiosResponse<ApiResponse>) => response.data.data
+});
 
 // 类型推导：data 的类型是 ApiResponse<User>
 const user = await request<User>({
@@ -324,13 +319,12 @@ const user = await request<User>({
 ```typescript
 import { parseContentDisposition } from '@soybeanjs/request';
 
-const filename = parseContentDisposition(
-  'attachment; filename*=UTF-8\'\'%E6%96%87%E4%BB%B6.pdf'
-);
+const filename = parseContentDisposition("attachment; filename*=UTF-8''%E6%96%87%E4%BB%B6.pdf");
 // '文件.pdf'
 ```
 
 支持的格式：
+
 - RFC 5987 编码：`filename*=UTF-8''example%20file.pdf`
 - 普通格式：`filename="example.pdf"` 或 `filename=example.pdf`
 
@@ -365,7 +359,7 @@ const request = createRequest(
       return response.data.data;
     },
     // 请求拦截
-    onRequest: async (config) => {
+    onRequest: async config => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -373,7 +367,7 @@ const request = createRequest(
       return config;
     },
     // 判断业务成功
-    isBackendSuccess: (response) => {
+    isBackendSuccess: response => {
       return response.data.code === 200;
     },
     // 业务失败处理
@@ -389,10 +383,9 @@ const request = createRequest(
         response.config.headers.Authorization = `Bearer ${newToken}`;
         return instance.request(response.config);
       }
-
     },
     // 错误处理
-    onError: async (error) => {
+    onError: async error => {
       showMessage(error.response?.data.message || error.message);
     }
   }
@@ -458,10 +451,7 @@ async function uploadFile(file: File) {
 ```typescript
 import { createFlatRequest } from '@soybeanjs/request';
 
-const flatRequest = createFlatRequest(
-  axiosConfig,
-  options
-);
+const flatRequest = createFlatRequest(axiosConfig, options);
 
 // 所有请求都返回 { data, error, response }
 async function safeGetUser(id: number) {
@@ -488,7 +478,7 @@ async function safeGetUser(id: number) {
 function createRequest<ResponseData, ApiData, State>(
   axiosConfig?: CreateAxiosDefaults,
   options?: Partial<RequestOption<ResponseData, ApiData, State>>
-): RequestInstance<ApiData, State>
+): RequestInstance<ApiData, State>;
 ```
 
 ### createFlatRequest
@@ -499,7 +489,7 @@ function createRequest<ResponseData, ApiData, State>(
 function createFlatRequest<ResponseData, ApiData, State>(
   axiosConfig?: CreateAxiosDefaults,
   options?: Partial<RequestOption<ResponseData, ApiData, State>>
-): FlatRequestInstance<ResponseData, ApiData, State>
+): FlatRequestInstance<ResponseData, ApiData, State>;
 ```
 
 ### 类型定义
@@ -507,9 +497,7 @@ function createFlatRequest<ResponseData, ApiData, State>(
 ```typescript
 // 请求实例
 interface RequestInstance<ApiData, State> {
-  <T = ApiData, R extends ResponseType = 'json'>(
-    config: CustomAxiosRequestConfig<R>
-  ): Promise<MappedType<R, T>>;
+  <T = ApiData, R extends ResponseType = 'json'>(config: CustomAxiosRequestConfig<R>): Promise<MappedType<R, T>>;
   state: State;
 }
 
@@ -573,7 +561,7 @@ type ResponseType = 'json' | 'blob' | 'arraybuffer' | 'stream' | 'text' | 'docum
 const fileData = await request({
   url: '/download',
   responseType: 'blob',
-  getFileName: (response) => {
+  getFileName: response => {
     // 自定义解析逻辑
     return 'my-file.pdf';
   }
