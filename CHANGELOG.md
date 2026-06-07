@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.2.0](https://github.com/soybeanjs/request/compare/v0.1.0...v0.2.0) (2026-06-07)
+
+### &nbsp;&nbsp;&nbsp;🚀 Features
+
+- **openapi**: add OpenAPI client and flat client implementations &nbsp;-&nbsp; by @soybeanjs [<samp>(5a92f)</samp>](https://github.com/soybeanjs/request/commit/5a92f0b)
+
+### &nbsp;&nbsp;&nbsp;❤️ Contributors
+
+[![soybeanjs](https://github.com/soybeanjs.png?size=48)](https://github.com/soybeanjs)&nbsp;&nbsp;
+
 ## [v0.1.0](https://github.com/soybeanjs/request/compare/v0.0.3...v0.1.0) (2026-06-07)
 
 ### &nbsp;&nbsp;&nbsp;🚀 Features
