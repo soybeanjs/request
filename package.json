@@ -47,20 +47,20 @@
     "upkg": "soy ncu"
   },
   "dependencies": {
-    "axios": "^1.13.6",
+    "axios": "^1.17.0",
     "axios-retry": "^4.5.0",
-    "qs-esm": "^7.0.3"
+    "qs-esm": "^8.0.1"
   },
   "devDependencies": {
-    "@soybeanjs/cli": "1.7.1",
-    "@types/node": "25.5.0",
-    "lint-staged": "16.4.0",
-    "oxfmt": "^0.41.0",
-    "oxlint": "^1.56.0",
+    "@soybeanjs/cli": "1.7.2",
+    "@types/node": "25.9.2",
+    "lint-staged": "17.0.7",
+    "oxfmt": "^0.53.0",
+    "oxlint": "^1.68.0",
     "simple-git-hooks": "2.13.1",
-    "tsdown": "0.21.4",
-    "tsx": "4.21.0",
-    "typescript": "5.9.3"
+    "tsdown": "0.22.2",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3"
   },
   "simple-git-hooks": {
     "commit-msg": "pnpm soy git-commit-verify",
@@ -69,5 +69,5 @@
   "lint-staged": {
     "*": "oxlint --fix && oxfmt"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@11.5.2"
 }
