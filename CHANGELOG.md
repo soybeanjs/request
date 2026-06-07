@@ -1,5 +1,24 @@
 # Changelog
 
+## [v0.1.0](https://github.com/soybeanjs/request/compare/v0.0.3...v0.1.0) (2026-06-07)
+
+### &nbsp;&nbsp;&nbsp;🚀 Features
+
+- **request**: add raw request method for axios response &nbsp;-&nbsp; by @soybeanjs [<samp>(b8519)</samp>](https://github.com/soybeanjs/request/commit/b8519d0)
+
+### &nbsp;&nbsp;&nbsp;🐞 Bug Fixes
+
+- **package**: update lint-staged command to include current directory &nbsp;-&nbsp; by @soybeanjs [<samp>(7b7c8)</samp>](https://github.com/soybeanjs/request/commit/7b7c8b6)
+- **request**: update axios import and instance creation method &nbsp;-&nbsp; by @soybeanjs [<samp>(70083)</samp>](https://github.com/soybeanjs/request/commit/7008385)
+
+### &nbsp;&nbsp;&nbsp;🏡 Chore
+
+- **deps**: update deps &nbsp;-&nbsp; by @soybeanjs [<samp>(65985)</samp>](https://github.com/soybeanjs/request/commit/65985cf)
+
+### &nbsp;&nbsp;&nbsp;❤️ Contributors
+
+[![soybeanjs](https://github.com/soybeanjs.png?size=48)](https://github.com/soybeanjs)&nbsp;&nbsp;
+
 ## [v0.0.3](https://github.com/soybeanjs/request/compare/v0.0.2...v0.0.3) (2026-03-20)
 
 ### &nbsp;&nbsp;&nbsp;🐞 Bug Fixes
