@@ -46,6 +46,30 @@ export function createRequest<ResponseData, ApiData, State extends Record<string
     return response.data as MappedType<R, T>;
   } as RequestInstance<ApiData, State>;
 
+  request.raw = async function rawRequest<T extends ApiData = ApiData, R extends ResponseType = 'json'>(
+    config: CustomAxiosRequestConfig<R>
+  ) {
+    const response: AxiosResponse<ResponseData> = await instance(config);
+
+    const responseType = response.config?.responseType || 'json';
+
+    if (responseType === 'json') {
+      return response as AxiosResponse<MappedType<R, T>>;
+    }
+
+    // handle file download response (处理文件响应)
+    if (FILE_RESPONSE_TYPES.includes(responseType as ResponseType)) {
+      const fileData = getFileData(response, config.getFileName);
+
+      return {
+        ...response,
+        data: fileData
+      } as AxiosResponse<MappedType<R, T>>;
+    }
+
+    return response as AxiosResponse<MappedType<R, T>>;
+  };
+
   request.state = {} as State;
 
   return request;

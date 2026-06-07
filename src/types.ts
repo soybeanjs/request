@@ -122,6 +122,9 @@ export interface RequestInstance<ApiData, State extends Record<string, unknown>>
   <T extends ApiData = ApiData, R extends ResponseType = 'json'>(
     config: CustomAxiosRequestConfig<R>
   ): Promise<MappedType<R, T>>;
+  raw<T extends ApiData = ApiData, R extends ResponseType = 'json'>(
+    config: CustomAxiosRequestConfig<R>
+  ): Promise<AxiosResponse<MappedType<R, T>>>;
 }
 
 export type FlatResponseSuccessData<ResponseData, ApiData> = {
