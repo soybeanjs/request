@@ -310,6 +310,226 @@ const user = await request<User>({
 });
 ```
 
+### 6. raw 方法 — 获取原始响应
+
+通过 `request.raw()` 可以跳过 `transform` 转换，直接获取完整的 `AxiosResponse` 对象。当你需要访问响应头、状态码、或原始响应数据时非常有用。
+
+**与普通 `request()` 的区别：**
+
+| 方法              | 返回值                      | 是否经过 transform |
+| ----------------- | --------------------------- | ------------------ |
+| `request()`       | 转换后的业务数据            | ✅ 是              |
+| `request.raw()`   | 完整的 `AxiosResponse` 对象 | ❌ 否              |
+
+**使用场景：**
+
+- **获取响应头**：如读取自定义响应头 `X-Request-Id`、`X-Total-Count` 等
+- **获取状态码**：需要区分 200/201 等不同成功状态码时
+- **获取完整原始数据**：在 `transform` 之前获取后端原始响应，用于调试或特殊处理
+- **处理分页信息**：通过响应头获取分页总数、页码等元数据
+
+```typescript
+// 1. 获取响应头中的自定义信息
+const response = await request.raw<User[]>({
+  url: '/users',
+  method: 'GET'
+});
+
+const totalCount = response.headers['x-total-count']; // 分页总数
+const requestId = response.headers['x-request-id'];   // 请求追踪 ID
+const statusCode = response.status;                    // HTTP 状态码
+
+console.log(`共 ${totalCount} 条数据，状态码：${statusCode}`);
+
+// 2. 文件下载时获取原始响应 + 文件信息
+const fileResponse = await request.raw({
+  url: '/download/report.pdf',
+  responseType: 'blob'
+});
+
+// fileResponse.data 包含 { file, filename, contentType }
+// fileResponse.headers 可获取服务器时间等额外信息
+const serverTime = fileResponse.headers['date'];
+console.log(`文件 ${fileResponse.data.filename}，服务器时间：${serverTime}`);
+
+// 3. 按需手动转换数据（不使用 transform）
+const rawResponse = await request.raw<User>({
+  url: '/users/123'
+});
+
+// 自行处理原始响应数据
+const rawData = rawResponse.data;
+// rawData 就是 transform 之前后端返回的原始数据
+```
+
+**类型签名：**
+
+```typescript
+interface RequestInstance<ApiData, State> {
+  // 标准请求：返回转换后的业务数据
+  <T = ApiData, R extends ResponseType = 'json'>(
+    config: CustomAxiosRequestConfig<R>
+  ): Promise<MappedType<R, T>>;
+
+  // raw 请求：返回完整的 AxiosResponse
+  raw<T = ApiData, R extends ResponseType = 'json'>(
+    config: CustomAxiosRequestConfig<R>
+  ): Promise<AxiosResponse<MappedType<R, T>>>;
+
+  state: State;
+}
+```
+
+### 7. OpenAPI 类型安全客户端
+
+通过 [openapi-typescript](https://openapi-ts.dev/) 生成 `paths` 类型后，可创建**全类型安全**的请求客户端——路径、参数、请求体和返回值均由 OpenAPI Spec 自动推导。
+
+> **前置步骤**：使用 `openapi-typescript` 将 `openapi.json` 生成类型文件：
+> ```bash
+> npx openapi-typescript ./openapi.json -o ./src/openapi.d.ts
+> ```
+> 生成的文件会导出 `paths`、`operations` 等类型，这就是传给 `createOpenapiClient` 的泛型参数。
+
+#### createOpenapiClient
+
+包装通过 `createRequest` 创建的标准请求实例，返回类型化的 OpenAPI 客户端：
+
+```typescript
+import { createRequest, createOpenapiClient } from '@soybeanjs/request';
+import type { paths } from './openapi.d.ts'; // 由 openapi-typescript 生成
+
+const request = createRequest({ baseURL: 'https://api.example.com' }, { /* ... */ });
+const client = createOpenapiClient<paths>(request);
+```
+
+**① 无参数 GET 请求：**
+
+```typescript
+// GET /api/v1/api/all —— 无需任何参数
+const apis = await client.get('/api/v1/api/all');
+// apis 的类型自动推导为 API 列表数组
+```
+
+**② 路径参数（Path Parameters）：**
+
+```typescript
+// GET /api/v1/api/{id} —— 需要路径参数
+const apiDetail = await client.get('/api/v1/api/{id}', {
+  params: { path: { id: 'abc-123' } }
+});
+// 路径中的 {id} 自动替换为 'abc-123'
+// apiDetail 的类型自动推导为 API 详情对象
+```
+
+**③ 查询参数（Query Parameters）：**
+
+```typescript
+// GET /api/v1/menu/list?page=1&pageSize=10 —— 需要查询参数
+const menuList = await client.get('/api/v1/menu/list', {
+  params: {
+    query: {
+      page: 1,
+      pageSize: 10
+    }
+  }
+});
+// menuList.list、menuList.total、menuList.page 均有完整类型
+```
+
+**④ 请求体（Request Body）：**
+
+```typescript
+// POST /api/v1/auth/login —— 需要请求体
+const loginResult = await client.post('/api/v1/auth/login', {
+  body: {
+    username: 'admin',
+    password: '123456'
+  }
+});
+// loginResult.token、loginResult.refreshToken 均有完整类型
+```
+
+**⑤ 路径参数 + 查询参数组合：**
+
+```typescript
+// GET /api/v1/org/{id}/users?page=1&pageSize=20
+const orgUsers = await client.get('/api/v1/org/{id}/users', {
+  params: {
+    path: { id: 'org-001' },
+    query: { page: 1, pageSize: 20 }
+  }
+});
+```
+
+**⑥ 路径参数 + 请求体组合：**
+
+```typescript
+// PUT /api/v1/menu/{id} —— 更新菜单
+await client.put('/api/v1/menu/{id}', {
+  params: { path: { id: 'menu-001' } },
+  body: {
+    name: '系统管理',
+    icon: 'setting',
+    order: 1
+  }
+});
+```
+
+**⑦ DELETE 请求：**
+
+```typescript
+// DELETE /api/v1/api/{id}
+await client.delete('/api/v1/api/{id}', {
+  params: { path: { id: 'abc-123' } }
+});
+```
+
+#### createFlatOpenapiClient
+
+包装通过 `createFlatRequest` 创建的扁平化请求实例。**不抛出异常**，通过 `{ data, error }` 判别结果：
+
+```typescript
+import { createFlatRequest, createFlatOpenapiClient } from '@soybeanjs/request';
+import type { paths } from './openapi.d.ts';
+
+const flatRequest = createFlatRequest({ baseURL: 'https://api.example.com' }, { /* ... */ });
+const client = createFlatOpenapiClient<paths>(flatRequest);
+```
+
+```typescript
+// GET 请求 —— 通过解构 data / error 处理结果
+const { data, error } = await client.get('/api/v1/menu/list', {
+  params: { query: { page: 1, pageSize: 10 } }
+});
+
+if (error) {
+  console.error('请求失败:', error.message);
+} else {
+  // data.list、data.total 类型安全
+  console.log(`共 ${data.total} 条菜单`);
+}
+
+// POST 请求 —— 同样通过 data / error 判断
+const { data: loginData, error: loginError } = await client.post('/api/v1/auth/login', {
+  body: { username: 'admin', password: '123456' }
+});
+
+if (loginError) {
+  console.error('登录失败:', loginError.message);
+} else {
+  localStorage.setItem('token', loginData.token);
+}
+```
+
+#### 两种客户端对比
+
+| 特性               | `createOpenapiClient`           | `createFlatOpenapiClient`           |
+| ------------------ | ------------------------------- | ----------------------------------- |
+| 底层实例           | `createRequest`（标准）          | `createFlatRequest`（扁平化）        |
+| 异常处理           | 抛出异常，需 `try-catch`        | 不抛异常，通过返回值判断            |
+| 返回值             | 直接返回业务数据                | `{ data, error }` 判别联合          |
+| 适用场景           | 大多数场景，统一错误处理        | 需要精细控制每个请求的成功/失败     |
+
 ## 🛠️ 实用工具
 
 ### parseContentDisposition
@@ -498,6 +718,7 @@ function createFlatRequest<ResponseData, ApiData, State>(
 // 请求实例
 interface RequestInstance<ApiData, State> {
   <T = ApiData, R extends ResponseType = 'json'>(config: CustomAxiosRequestConfig<R>): Promise<MappedType<R, T>>;
+  raw<T = ApiData, R extends ResponseType = 'json'>(config: CustomAxiosRequestConfig<R>): Promise<AxiosResponse<MappedType<R, T>>>;
   state: State;
 }
 
