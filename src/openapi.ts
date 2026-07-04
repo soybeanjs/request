@@ -236,6 +236,7 @@ function replacePathParams(path: string, params?: Record<string, unknown>): stri
  * 基于生成的 `paths` 类型创建类型安全的 OpenAPI 客户端。
  *
  * @param requestInstance - 通过 `createRequest` 创建的请求实例
+ * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型，请使用 `createOpenapiClientWithPrefix`
  * @returns 类型化的 OpenAPI 客户端
  *
  * @example
@@ -258,20 +259,20 @@ function replacePathParams(path: string, params?: Record<string, unknown>): stri
  * });
  * ```
  */
-export function createOpenapiClient<Paths extends Record<string, any>>(
-  requestInstance: RequestInstance<any, any>
-): OpenapiClient<Paths> {
+export function createOpenapiClient<Paths extends Record<string, any>, Prefix extends string = ''>(
+  requestInstance: RequestInstance<any, any>,
+  prefix: Prefix = '' as Prefix
+): OpenapiClient<PathsRemovedPrefix<Paths, Prefix>> {
   const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'] as const;
 
-  const client = {} as OpenapiClient<Paths>;
+  const client = {} as OpenapiClient<PathsRemovedPrefix<Paths, Prefix>>;
 
   for (const method of methods) {
-    // @ts-expect-error ignore
     client[method] = async (url: string, options?: any) => {
       const { params, body, ...restConfig } = options || {};
 
       // Replace path params in the URL
-      const resolvedUrl = replacePathParams(url, params?.path);
+      const resolvedUrl = replacePathParams(`${prefix}${url}`, params?.path);
 
       return requestInstance({
         url: resolvedUrl,
@@ -287,6 +288,10 @@ export function createOpenapiClient<Paths extends Record<string, any>>(
   return client;
 }
 
+type PathsRemovedPrefix<Paths extends Record<string, any>, Prefix extends string> = {
+  [P in keyof Paths as P extends `${Prefix}${infer S}` ? S : never]: Paths[P];
+};
+
 /**
  * Create a type-safe flat OpenAPI client based on the generated `paths` type.
  *
@@ -297,6 +302,7 @@ export function createOpenapiClient<Paths extends Record<string, any>>(
  * 基于生成的 `paths` 类型创建类型安全的扁平化 OpenAPI 客户端。
  *
  * @param flatRequestInstance - 通过 `createFlatRequest` 创建的扁平化请求实例
+ * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型，请使用 `createFlatOpenapiClientWithPrefix`
  * @returns 类型化的扁平化 OpenAPI 客户端
  *
  * @example
@@ -319,20 +325,20 @@ export function createOpenapiClient<Paths extends Record<string, any>>(
  * }
  * ```
  */
-export function createFlatOpenapiClient<Paths extends Record<string, any>>(
-  flatRequestInstance: FlatRequestInstance<any, any, any>
-): FlatOpenapiClient<Paths> {
+export function createFlatOpenapiClient<Paths extends Record<string, any>, Prefix extends string = ''>(
+  flatRequestInstance: FlatRequestInstance<any, any, any>,
+  prefix = '' as Prefix
+): FlatOpenapiClient<PathsRemovedPrefix<Paths, Prefix>> {
   const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'] as const;
 
-  const client = {} as FlatOpenapiClient<Paths>;
+  const client = {} as FlatOpenapiClient<PathsRemovedPrefix<Paths, Prefix>>;
 
   for (const method of methods) {
-    // @ts-expect-error ignore
     client[method] = async (url: string, options?: any) => {
       const { params, body, ...restConfig } = options || {};
 
       // Replace path params in the URL
-      const resolvedUrl = replacePathParams(url, params?.path);
+      const resolvedUrl = replacePathParams(`${prefix}${url}`, params?.path);
 
       return flatRequestInstance({
         url: resolvedUrl,

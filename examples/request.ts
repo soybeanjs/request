@@ -25,15 +25,8 @@ const flatRequest = createFlatRequest(
   }
 );
 
-const client = createOpenapiClient<paths>(request);
+const client = createOpenapiClient<paths, '/api/v1'>(request, '/api/v1');
 
-const data = client.get('/api/v1/org/{id}', { params: { path: { id: '1' } } });
+const data = client.get('/org/{id}', { params: { path: { id: '1' } } });
 
-const flatClient = createFlatOpenapiClient<paths>(flatRequest);
-
-const flatData = flatClient.post('/api/v1/auth/login', {
-  body: {
-    username: 'admin',
-    password: '123456'
-  }
-});
+const flatClient = createFlatOpenapiClient<paths, '/api/v1'>(flatRequest, '/api/v1');
