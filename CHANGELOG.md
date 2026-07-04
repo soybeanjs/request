@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.2.1](https://github.com/soybeanjs/request/compare/v0.2.0...v0.2.1) (2026-07-04)
+
+### &nbsp;&nbsp;&nbsp;🚀 Features
+
+- **openapi**: enhance FlatOpenapiResponse to include AxiosResponse &nbsp;-&nbsp; by @soybeanjs [<samp>(b60b5)</samp>](https://github.com/soybeanjs/request/commit/b60b597)
+
+### &nbsp;&nbsp;&nbsp;🏡 Chore
+
+- **deps**: update deps &nbsp;-&nbsp; by @soybeanjs [<samp>(990db)</samp>](https://github.com/soybeanjs/request/commit/990db2f)
+
+### &nbsp;&nbsp;&nbsp;❤️ Contributors
+
+[![soybeanjs](https://github.com/soybeanjs.png?size=48)](https://github.com/soybeanjs)&nbsp;&nbsp;
+
 ## [v0.2.0](https://github.com/soybeanjs/request/compare/v0.1.0...v0.2.0) (2026-06-07)
 
 ### &nbsp;&nbsp;&nbsp;🚀 Features
