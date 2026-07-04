@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.2.2](https://github.com/soybeanjs/request/compare/v0.2.1...v0.2.2) (2026-07-04)
+
+### &nbsp;&nbsp;&nbsp;🚀 Features
+
+- **openapi**: add support for path prefix in OpenAPI client creation &nbsp;-&nbsp; by @soybeanjs [<samp>(f5feb)</samp>](https://github.com/soybeanjs/request/commit/f5febbb)
+
+### &nbsp;&nbsp;&nbsp;❤️ Contributors
+
+[![soybeanjs](https://github.com/soybeanjs.png?size=48)](https://github.com/soybeanjs)&nbsp;&nbsp;
+
 ## [v0.2.1](https://github.com/soybeanjs/request/compare/v0.2.0...v0.2.1) (2026-07-04)
 
 ### &nbsp;&nbsp;&nbsp;🚀 Features
