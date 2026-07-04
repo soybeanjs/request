@@ -1,4 +1,4 @@
-import type { AxiosError, AxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { FlatRequestInstance, RequestInstance } from './types';
 
 // ============================================================
@@ -175,7 +175,9 @@ export type OpenapiClient<Paths extends Record<string, any>> = {
  *
  * OpenAPI 请求的扁平化响应 — 不抛出异常，通过返回值判断成功或失败。
  */
-export type FlatOpenapiResponse<T> = { data: SuccessResponse<T>; error: null } | { data: null; error: AxiosError };
+export type FlatOpenapiResponse<T> =
+  | { data: SuccessResponse<T>; error: null; response: AxiosResponse }
+  | { data: null; error: AxiosError; response: AxiosResponse };
 
 /**
  * Typed flat client method.
