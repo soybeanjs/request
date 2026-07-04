@@ -2,3 +2,5 @@ allowBuilds:
   esbuild: true
   simple-git-hooks: false
 shamefullyHoist: true
+minimumReleaseAgeExclude:
+  - tsx@4.23.0
