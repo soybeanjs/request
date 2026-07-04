@@ -236,7 +236,7 @@ function replacePathParams(path: string, params?: Record<string, unknown>): stri
  * 基于生成的 `paths` 类型创建类型安全的 OpenAPI 客户端。
  *
  * @param requestInstance - 通过 `createRequest` 创建的请求实例
- * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型，请使用 `createOpenapiClientWithPrefix`
+ * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型
  * @returns 类型化的 OpenAPI 客户端
  *
  * @example
@@ -302,7 +302,7 @@ type PathsRemovedPrefix<Paths extends Record<string, any>, Prefix extends string
  * 基于生成的 `paths` 类型创建类型安全的扁平化 OpenAPI 客户端。
  *
  * @param flatRequestInstance - 通过 `createFlatRequest` 创建的扁平化请求实例
- * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型，请使用 `createFlatOpenapiClientWithPrefix`
+ * @param prefix - 可选的路径前缀；如果需要在显式传入 `Paths` 时保留 prefix 的字面量类型
  * @returns 类型化的扁平化 OpenAPI 客户端
  *
  * @example
