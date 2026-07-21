@@ -53,14 +53,14 @@
   },
   "devDependencies": {
     "@soybeanjs/cli": "1.7.2",
-    "@types/node": "26.1.0",
-    "lint-staged": "17.0.8",
-    "oxfmt": "^0.57.0",
-    "oxlint": "^1.72.0",
+    "@types/node": "26.1.1",
+    "lint-staged": "17.1.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
     "simple-git-hooks": "2.13.1",
-    "tsdown": "0.22.3",
-    "tsx": "4.23.0",
-    "typescript": "6.0.3"
+    "tsdown": "0.22.12",
+    "tsx": "4.23.1",
+    "typescript": "7.0.2"
   },
   "simple-git-hooks": {
     "commit-msg": "pnpm soy git-commit-verify",
@@ -69,5 +69,5 @@
   "lint-staged": {
     "*": "oxlint . --fix && oxfmt"
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@11.15.1"
 }
