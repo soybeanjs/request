@@ -1,4 +1,5 @@
-import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { AxiosError } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 export type ContentType =
   | 'text/html'
@@ -10,8 +11,23 @@ export type ContentType =
 
 export type ResponseTransform<Input = any, Output = any> = (input: Input) => Output | Promise<Output>;
 
+/**
+ * Error thrown when the backend returns a response that fails `isBackendSuccess`.
+ *
+ * 后端业务错误时抛出的错误,继承自 AxiosError,可通过 `instanceof BackendError` 判别。
+ */
+export class BackendError<ResponseData = any> extends AxiosError<ResponseData> {
+  constructor(message: string, response: AxiosResponse<ResponseData>) {
+    super(message, BACKEND_ERROR_FLAG, response.config, response.request, response);
+    this.name = 'BackendError';
+  }
+}
+
+/** Backend error flag, used as `error.code` for {@link BackendError}. */
+export const BACKEND_ERROR_FLAG = 'BACKEND_ERROR';
+
 export interface RequestOption<
-  ResponseData,
+  ResponseData = any,
   ApiData = ResponseData,
   State extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -40,12 +56,6 @@ export interface RequestOption<
    */
   isBackendSuccess: (response: AxiosResponse<ResponseData>) => boolean;
   /**
-   * The backend error flag (表示后端请求错误的标志)
-   *
-   * @default 'BACKEND_ERROR'
-   */
-  backendErrorFlag?: string;
-  /**
    * The backend error message (表示后端请求错误信息)
    *
    * @default 'Backend request error, please check `isBackendSuccess`. (后端请求错误,请检查 `isBackendSuccess`)'
@@ -56,13 +66,20 @@ export interface RequestOption<
    *
    * For example: You can handle the expired token in this hook (例如：你可以在此钩子中处理过期的 token)
    *
+   * Return a new `AxiosResponse` to retry the request — the new response will go through
+   * `transformResponse` and `isBackendSuccess` again, but **will not** re-trigger
+   * `onBackendFail` to avoid infinite loops.
+   *
+   * 返回新的 `AxiosResponse` 用于重试请求 — 新响应会再次经过 `transformResponse` 与
+   * `isBackendSuccess` 校验,但**不会**再次触发 `onBackendFail`,以避免无限循环。
+   *
    * @param response Axios response (响应)
    * @param instance Axios instance (实例)
    */
   onBackendFail?: (
     response: AxiosResponse<ResponseData>,
     instance: AxiosInstance
-  ) => Promise<AxiosResponse | null> | Promise<void>;
+  ) => Promise<AxiosResponse | null | void>;
   /**
    * The hook to handle error (after request fail) (处理错误的钩子（请求失败后）)
    *
@@ -90,6 +107,13 @@ export interface FileResponseData<T = Blob | ArrayBuffer | ReadableStream<Uint8A
 interface ResponseMap {
   blob: FileResponseData<Blob>;
   arraybuffer: FileResponseData<ArrayBuffer>;
+  /**
+   * Stream response. Only supported in Node.js — browsers do not support `responseType: 'stream'`
+   * and axios will fall back to the default behaviour. Use `blob` / `arraybuffer` in browsers.
+   *
+   * Stream 响应。仅在 Node.js 中支持,浏览器不支持 `responseType: 'stream'`,
+   * 请在浏览器中使用 `blob` / `arraybuffer`。
+   */
   stream: FileResponseData<ReadableStream<Uint8Array>>;
   text: string;
   document: Document;
@@ -115,10 +139,20 @@ export type CustomAxiosRequestConfig<R extends ResponseType = 'json'> = Omit<Axi
 export interface RequestInstanceCommon<State extends Record<string, unknown>> {
   /** you can set custom state in the request instance */
   state: State;
+  /**
+   * The underlying axios instance (底层 axios 实例)
+   *
+   * Exposed for advanced scenarios such as adding custom interceptors.
+   * 暴露用于高级场景,如添加自定义拦截器。
+   */
+  instance: AxiosInstance;
 }
 
 /** The request instance */
-export interface RequestInstance<ApiData, State extends Record<string, unknown>> extends RequestInstanceCommon<State> {
+export interface RequestInstance<
+  ApiData = any,
+  State extends Record<string, unknown> = Record<string, unknown>
+> extends RequestInstanceCommon<State> {
   <T extends ApiData = ApiData, R extends ResponseType = 'json'>(
     config: CustomAxiosRequestConfig<R>
   ): Promise<MappedType<R, T>>;
@@ -136,7 +170,12 @@ export type FlatResponseSuccessData<ResponseData, ApiData> = {
 export type FlatResponseFailData<ResponseData> = {
   data: null;
   error: AxiosError<ResponseData>;
-  response: AxiosResponse<ResponseData>;
+  /**
+   * The raw axios response. May be `undefined` for network errors where no response was received.
+   *
+   * 原始 axios 响应。网络错误等无响应场景下为 `undefined`。
+   */
+  response?: AxiosResponse<ResponseData>;
 };
 
 export type FlatResponseData<ResponseData, ApiData> =
@@ -144,11 +183,27 @@ export type FlatResponseData<ResponseData, ApiData> =
   | FlatResponseFailData<ResponseData>;
 
 export interface FlatRequestInstance<
-  ResponseData,
-  ApiData,
-  State extends Record<string, unknown>
+  ResponseData = any,
+  ApiData = ResponseData,
+  State extends Record<string, unknown> = Record<string, unknown>
 > extends RequestInstanceCommon<State> {
   <T extends ApiData = ApiData, R extends ResponseType = 'json'>(
     config: CustomAxiosRequestConfig<R>
   ): Promise<FlatResponseData<ResponseData, MappedType<R, T>>>;
+  /**
+   * Perform a request that returns the full {@link AxiosResponse} without running `transform`.
+   *
+   * Unlike {@link RequestInstance.raw}, this still never throws — failures are returned as
+   * `{ data: null, error, response? }`.
+   *
+   * 发起请求但跳过 `transform`,直接返回完整的 {@link AxiosResponse}。
+   * 与 {@link RequestInstance.raw} 不同,此方法仍然不会抛异常 —— 失败时返回
+   * `{ data: null, error, response? }`。
+   */
+  raw<T extends ApiData = ApiData, R extends ResponseType = 'json'>(
+    config: CustomAxiosRequestConfig<R>
+  ): Promise<
+    | { data: AxiosResponse<MappedType<R, T>>; error: null; response: AxiosResponse<MappedType<R, T>> }
+    | { data: null; error: AxiosError<ResponseData>; response?: AxiosResponse<ResponseData> }
+  >;
 }

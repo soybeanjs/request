@@ -31,7 +31,18 @@ export function isResponseJson(response: AxiosResponse) {
   return responseType === 'json' || responseType === undefined;
 }
 
-export async function transformResponse(response: AxiosResponse) {
+/**
+ * Coerce a binary response (blob / arraybuffer) into JSON when the server actually
+ * returned `application/json` content (e.g. error envelopes returned with a 200 status).
+ *
+ * No-op for `json` / `text` / `document` / `stream` response types.
+ *
+ * 将二进制响应(blob / arraybuffer)在服务器实际返回 `application/json` 时转换为 JSON
+ * (例如错误信封以 200 状态返回的场景)。对 `json` / `text` / `document` / `stream` 类型不做处理。
+ *
+ * Renamed from `transformResponse` to avoid clashing with axios' built-in config field of the same name.
+ */
+export async function coerceBinaryToJsonResponse(response: AxiosResponse) {
   const responseType: ResponseType = (response.config?.responseType as ResponseType) || 'json';
   if (responseType === 'json') return;
 

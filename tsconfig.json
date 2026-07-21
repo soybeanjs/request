@@ -23,6 +23,6 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "examples/openapi.d.ts"],
+  "include": ["src/**/*", "examples/openapi.d.ts", "examples/request.ts"],
   "exclude": ["node_modules", "dist"]
 }

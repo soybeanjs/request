@@ -111,16 +111,43 @@ if (error) {
 
 ### RequestOption 配置项
 
-| 配置项             | 类型       | 必填 | 说明                                 |
-| ------------------ | ---------- | ---- | ------------------------------------ |
-| `transform`        | `Function` | 是   | 转换响应数据为业务数据               |
-| `onRequest`        | `Function` | 否   | 请求前拦截器，可添加 token 等        |
-| `isBackendSuccess` | `Function` | 是   | 判断后端业务逻辑是否成功             |
-| `onBackendFail`    | `Function` | 否   | 后端业务失败回调，如处理 token 过期  |
-| `onError`          | `Function` | 否   | 请求错误处理，如显示错误提示         |
-| `defaultState`     | `Object`   | 否   | 默认状态对象                         |
-| `backendErrorFlag` | `string`   | 否   | 后端错误标识，默认 `'BACKEND_ERROR'` |
-| `backendErrorMsg`  | `string`   | 否   | 后端错误消息                         |
+| 配置项             | 类型       | 必填 | 说明                                                                                              |
+| ------------------ | ---------- | ---- | ------------------------------------------------------------------------------------------------- |
+| `transform`        | `Function` | 是   | 转换响应数据为业务数据                                                                            |
+| `onRequest`        | `Function` | 否   | 请求前拦截器，可添加 token 等                                                                     |
+| `isBackendSuccess` | `Function` | 是   | 判断后端业务逻辑是否成功                                                                          |
+| `onBackendFail`    | `Function` | 否   | 后端业务失败回调，如处理 token 过期。返回新 `AxiosResponse` 可触发重试,新响应会再次校验          |
+| `onError`          | `Function` | 否   | 请求错误处理，如显示错误提示                                                                      |
+| `defaultState`     | `Object`   | 否   | 默认状态对象                                                                                      |
+| `backendErrorMsg`  | `string`   | 否   | 后端错误消息,用于构造 [`BackendError`](#错误判别)                                                |
+
+> 业务错误会以 `BackendError` 实例(继承自 `AxiosError`,`error.code === 'BACKEND_ERROR'`)形式抛出,
+> 可通过 `instanceof BackendError` 或 `error.code === BACKEND_ERROR_FLAG` 判别,详见 [错误判别](#错误判别)。
+
+### 错误判别
+
+业务错误(由 `isBackendSuccess` 判定为失败)会构造为 `BackendError` 实例:
+
+```typescript
+import { BackendError, BACKEND_ERROR_FLAG } from '@soybeanjs/request';
+
+try {
+  await request({ url: '/users/1' });
+} catch (error) {
+  if (error instanceof BackendError) {
+    // 业务错误,例如 code !== 200
+    console.error('业务错误:', error.message);
+  } else if (error instanceof AxiosError) {
+    // 网络 / HTTP 错误
+    console.error('网络错误:', error.message);
+  }
+}
+
+// 或通过 code 判别(等价于 instanceof BackendError)
+if (axiosError.code === BACKEND_ERROR_FLAG) {
+  // ...
+}
+```
 
 ### 请求处理流程
 
@@ -266,21 +293,27 @@ onRequest: config => {
 
 ### 4. 自动重试
 
+通过 axios 配置中的 `'axios-retry'` 字段传入 [axios-retry](https://github.com/softonic/axios-retry) 选项:
+
 ```typescript
 const request = createRequest(
   {
     baseURL: 'https://api.example.com',
-    // axios-retry 配置
-    retries: 3,
-    retryDelay: retryCount => retryCount * 1000,
-    retryCondition: error => {
-      // 仅在网络错误或 5xx 错误时重试
-      return !error.response || error.response.status >= 500;
+    'axios-retry': {
+      retries: 3,
+      retryDelay: retryCount => retryCount * 1000,
+      retryCondition: error => {
+        // 仅在网络错误或 5xx 错误时重试
+        return !error.response || error.response.status >= 500;
+      }
     }
   },
   options
 );
 ```
+
+> 早期版本曾支持把 `retries` / `retryDelay` / `retryCondition` 直接写在 axios 配置顶层,
+> 但这些字段并不属于 axios 自身类型,会造成类型错误。新版本统一收敛到 `'axios-retry'` 命名空间下。
 
 ### 5. 类型推导
 
@@ -377,8 +410,13 @@ interface RequestInstance<ApiData, State> {
   ): Promise<AxiosResponse<MappedType<R, T>>>;
 
   state: State;
+  /** 底层 axios 实例,可用于添加自定义拦截器等高级场景 */
+  instance: AxiosInstance;
 }
 ```
+
+> `createFlatRequest` 创建的扁平化实例同样提供 `flatRequest.raw()` 方法,语义与上面一致,
+> 但不会抛异常 —— 返回 `{ data: AxiosResponse, error: null, response }` 或 `{ data: null, error, response? }`。
 
 ### 7. OpenAPI 类型安全客户端
 
@@ -390,6 +428,18 @@ interface RequestInstance<ApiData, State> {
 > ```
 > 生成的文件会导出 `paths`、`operations` 等类型，这就是传给 `createOpenapiClient` 的泛型参数。
 
+#### ⚠️ 与 `transform` 的语义关系(重要)
+
+OpenAPI 客户端类型推导出的返回值来源于 spec 的 `responses` 字段。但底层 `createRequest` 在返回前会执行 `transform`。**为保证类型与运行时一致,你的 `transform` 必须返回 spec 所描述的形态**:
+
+| 后端响应结构                            | spec 描述               | 正确的 `transform`                              |
+| -------------------------------------- | ----------------------- | ----------------------------------------------- |
+| `{ code, data, message }` envelope     | `data` 字段类型(业务数据) | `response => response.data.data`                |
+| `{ code, data, message }` envelope     | 完整 envelope            | `response => response.data`                     |
+| 无 envelope,直接返回业务数据           | 业务数据                 | `response => response.data`(默认)               |
+
+简言之:**spec 的 `responses[2xx].content['application/json']` 必须等于 `transform` 的返回类型**。
+
 #### createOpenapiClient
 
 包装通过 `createRequest` 创建的标准请求实例，返回类型化的 OpenAPI 客户端：
@@ -400,6 +450,16 @@ import type { paths } from './openapi.d.ts'; // 由 openapi-typescript 生成
 
 const request = createRequest({ baseURL: 'https://api.example.com' }, { /* ... */ });
 const client = createOpenapiClient<paths>(request);
+```
+
+**路径前缀(`prefix`):** 若 `paths` 中的路径都带统一前缀(如 `/api/v1`),可通过第二个类型参数 `Prefix` 与运行时参数 `prefix` 剥离前缀,让调用方使用更短的路径。两者必须保持一致:
+
+```typescript
+// paths 中的路径形如 '/api/v1/menu/list',剥离前缀后调用方使用 '/menu/list'
+const client = createOpenapiClient<paths, '/api/v1'>(request, '/api/v1');
+
+// 调用时使用剥离前缀后的路径
+const menus = await client.get('/menu/list', { params: { query: { page: 1 } } });
 ```
 
 **① 无参数 GET 请求：**
